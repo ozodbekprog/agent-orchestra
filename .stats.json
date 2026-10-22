@@ -1,0 +1,12 @@
+{
+ "session_count": 0,
+ "total_queries": 1,
+ "total_chat": 1,
+ "total_action": 0,
+ "total_task": 0,
+ "started_at": 1784728949.9635596,
+ "last_seen": 1784728949.9635637,
+ "models_used": {
+  "test-model": 1
+ }
+}

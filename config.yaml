@@ -1,0 +1,71 @@
+# agent-orchestra — model konfiguratsiyasi (gibrid strategiya)
+# Hammasi OpenRouter orqali (bitta kalit): bepul workerlar + (balans bo'lsa) arzon director
+
+chat:
+  # Oddiy suhbat uchun (to'g'ridan-to'g'ri OpenRouter API — tez). Tez + o'zbekchani biladi.
+  # Balans bo'lsa 'openrouter/google/gemini-2.5-flash' yanada yaxshi.
+  model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+  fallbacks:
+    - openrouter/poolside/laguna-s-2.1:free
+  history_turns: 12       # nechta oxirgi xabar modelga kontekst sifatida yuboriladi
+  timeout_seconds: 60
+  # Terminalda /model orqali tanlanadigan bepul modellar (nom · izoh)
+  available:
+    - id: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+      note: "tez ~2s, o'zbekchani yaxshi biladi (tavsiya)"
+    - id: openrouter/poolside/laguna-s-2.1:free
+      note: "tez, o'zbekcha yaxshi"
+    - id: openrouter/google/gemma-4-31b-it:free
+      note: "Google Gemma, kuchli"
+    - id: openrouter/google/gemma-4-26b-a4b-it:free
+      note: "Gemma kichikroq/tezroq"
+    - id: openrouter/nvidia/nemotron-nano-9b-v2:free
+      note: "kichik, tezkor"
+    - id: openrouter/openai/gpt-oss-20b:free
+      note: "OpenAI ochiq modeli (o'zbekchada zaifroq)"
+    - id: openrouter/cohere/north-mini-code:free
+      note: "kodga moslashgan"
+
+agent:
+  # HAQIQIY amal rejimi (papka/fayl yaratish, buyruq bajarish) — opencode real papkada.
+  # Bepul, tool-use'ni uddalaydi. Balans bo'lsa 'openrouter/deepseek/deepseek-chat-v3.1' kuchliroq.
+  model: openrouter/cohere/north-mini-code:free
+  workdir: "~"            # amallar bajariladigan papka (default: uy papkasi)
+  timeout_seconds: 150
+
+director:
+  # Vazifani qismlarga bo'ladi va natijalarni yig'adi.
+  # IZOH: balans past bo'lgani uchun hozircha BEPUL. Balansga $10 qo'ysangiz,
+  # ishonchlilik uchun 'openrouter/anthropic/claude-haiku-4.5' ga o'tkazing.
+  model: openrouter/openai/gpt-oss-20b:free
+  # director qotsa/xato bersa — shu bepul modellar bilan ketma-ket urinadi
+  fallbacks:
+    - openrouter/google/gemma-4-31b-it:free
+    - openrouter/nvidia/nemotron-3-super-120b-a12b:free
+
+workers:
+  # Bepul modellar pool'i — subtasklar shular orasida taqsimlanadi (round-robin)
+  free_pool:
+    - openrouter/nvidia/nemotron-3-super-120b-a12b:free
+    - openrouter/openai/gpt-oss-20b:free
+    - openrouter/google/gemma-4-31b-it:free
+    - openrouter/poolside/laguna-s-2.1:free
+    - openrouter/cohere/north-mini-code:free
+
+router:
+  # Kirishni chat/action/task ga tasniflash uchun (AI asosida)
+  model: openrouter/openai/gpt-oss-20b:free
+  fallbacks:
+    - openrouter/google/gemma-4-31b-it:free
+    - openrouter/nvidia/nemotron-3-super-120b-a12b:free
+
+fallback:
+  # Bepul worker qotsa/xato bersa — shu modelga qayta yuklanadi.
+  # Balans bo'lsa 'openrouter/google/gemini-2.5-flash' (arzon+ishonchli) yaxshiroq.
+  model: openrouter/google/gemma-4-31b-it:free
+
+limits:
+  max_parallel: 4        # bir vaqtda nechta worker (4 ta model parallel)
+  timeout_seconds: 90    # bitta model chaqiruvi uchun maksimal vaqt
+  max_retries: 1         # xatoda necha marta fallback'ga urinish
+  overall_timeout: 200   # butun vazifa uchun global chegara (hech qachon abadiy qotmaydi)

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# agent-orchestra ishga tushirish
+export PATH="$HOME/.npm-global/bin:$PATH"
+cd "$HOME/agent-orchestra" || exit 1
+exec python3 -m orchestra "$@"
